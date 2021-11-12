@@ -22,12 +22,14 @@ namespace GoXLR.Server
       private bool _clientConnected;
       private List<string> _profiles;
       private string[] tempArr;
+      private bool _inProgress;
 
       public GoXLRServer(ILogger<GoXLRServer> logger, IOptions<WebSocketServerSettings> options)
       {
          _logger = logger;
          _settings = options.Value;
          _clientConnected = false;
+         _inProgress = false;
          _connection = null;
          _identifier = null;
          _profiles = new();
@@ -98,13 +100,17 @@ namespace GoXLR.Server
 
          socket.OnMessage = (message) =>
          {
+            _inProgress = true;
             _logger.LogDebug("Message: {0}", message);
 
             try
             {
                var document = JsonSerializer.Deserialize<JsonDocument>(message);
                if (document is null)
+               {
+                  _inProgress = false;
                   return;
+               }
 
                var root = document.RootElement;
                var propertyAction = root.GetProperty("action").GetString();
@@ -137,6 +143,7 @@ namespace GoXLR.Server
             {
                _logger.LogError(e.ToString());
             }
+            _inProgress = false;
          };
 
          //socket.OnPing = (bytes) => _logger.LogInformation("Ping: {0}", Convert.ToBase64String(bytes));
@@ -162,8 +169,12 @@ namespace GoXLR.Server
          var json = $"{{\"action\":\"com.tchelicon.goxlr.profilechange\",\"context\":{contextId},\"event\":\"propertyInspectorDidAppear\"}}";
 
          tempArr = new string[0];
+         _inProgress = true;
+
          //Send:
          _ = _connection.Send(json);
+
+         while (_inProgress) { }
 
          return tempArr.ToList();
       }
