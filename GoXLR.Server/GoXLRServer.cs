@@ -146,8 +146,6 @@ namespace GoXLR.Server
             _inProgress = false;
          };
 
-         //socket.OnPing = (bytes) => _logger.LogInformation("Ping: {0}", Convert.ToBase64String(bytes));
-         //socket.OnPong = (bytes) => _logger.LogInformation("Pong: {0}", Convert.ToBase64String(bytes));
          socket.OnError = (exception) => _logger.LogError(exception.ToString());
       }
 
@@ -158,7 +156,7 @@ namespace GoXLR.Server
       {
          if (!_clientConnected)
          {
-            _logger.LogWarning($"No socket found on: {_identifier.ClientIpAddress}:{_identifier.ClientPort}");
+            _logger.LogWarning($"No client currently connected");
             return new();
          }
 
@@ -179,6 +177,17 @@ namespace GoXLR.Server
          return tempArr.ToList();
       }
 
+      public List<string> GetProfiles()
+      {
+         _profiles = FetchProfiles();
+         return _profiles;
+      }
+
+      public bool GetConnected()
+      {
+         return _clientConnected;
+      }
+
       /// <summary>
       /// Sets a profile in the selected GoXLR App.
       /// </summary>
@@ -188,7 +197,7 @@ namespace GoXLR.Server
       {
          if (!_clientConnected)
          {
-            _logger.LogWarning($"No socket found on: {_identifier.ClientIpAddress}:{_identifier.ClientPort}");
+            _logger.LogWarning($"No client currently connected");
             return;
          }
 
@@ -209,11 +218,13 @@ namespace GoXLR.Server
       /// <param name="action"></param>
       /// <param name="input"></param>
       /// <param name="output"></param>
-      public bool SetRouting(string action, string input, string output)
+      public bool SetRouting(string action, string input, string output, out string reason)
       {
+         reason = "";
          if (!_clientConnected)
          {
-            _logger.LogWarning($"No socket found on: {_identifier.ClientIpAddress}:{_identifier.ClientPort}");
+            reason = "No Client connected.";
+            _logger.LogWarning(reason);
             return false;
          }
 
@@ -244,7 +255,8 @@ namespace GoXLR.Server
 
          if (!possibleActions.Contains(action) || !possibleInputs.Contains(input) || !possibleOutputs.Contains(output))
          {
-            _logger.LogInformation($"Invalid input.");
+            reason = "Invalid string input.";
+            _logger.LogInformation(reason);
             return false;
          }
 
