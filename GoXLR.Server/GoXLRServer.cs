@@ -59,7 +59,7 @@ namespace GoXLR.Server
             _clientConnected = true;
             _connection = socket;
             _identifier = identifier;
-            _logger.LogInformation($"Connection opened {socket.ConnectionInfo.ClientIpAddress}.");
+            _logger.LogInformation($"Connection opened {socket.ConnectionInfo.ClientIpAddress}:{socket.ConnectionInfo.ClientPort}.");
 
             //Get updated profiles:
             _profiles = FetchProfiles();
