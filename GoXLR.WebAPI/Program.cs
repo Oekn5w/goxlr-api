@@ -109,6 +109,78 @@ namespace GoXLR.WebAPI
             await context.Response.Body.WriteAsync(Encoding.UTF8.GetBytes(response.ToJsonString()));
          });
 
+         app.MapPost("/profile/set", async context =>
+         {
+            context.Response.StatusCode = 200;
+            context.Response.ContentType = "application/json";
+            bool connected = goXlrServer.GetConnected();
+            bool success = false;
+            string information = "disconnected";
+            if (connected)
+            {
+               StreamReader sr = new StreamReader(context.Request.Body);
+               Task<string> readtask = sr.ReadToEndAsync();
+               readtask.Wait();
+               sr.Close();
+               logger.LogInformation(readtask.Result);
+               try
+               {
+                  JsonElement JsonReq = JsonSerializer.Deserialize<JsonDocument>(readtask.Result).RootElement;
+                  var profileEle = JsonReq.GetProperty("profile");
+                  int tempIdx;
+                  string reqProfile = "";
+                  var profiles = goXlrServer.GetProfiles(true);
+                  try
+                  {
+                     tempIdx = profileEle.GetInt32();
+                     if (tempIdx >= 0 && tempIdx < profiles.Count())
+                     {
+                        reqProfile = profiles[tempIdx];
+                        success = true;
+                     }
+                  }
+                  catch (Exception ex) { }
+                  if (reqProfile == "")
+                  {
+                     try
+                     {
+                        reqProfile = profileEle.GetString();
+                        success = profiles.Contains(reqProfile);
+                        if (!success)
+                        {
+                           logger.LogInformation("MapPOST: SetProfile: Given profile identifier not found.");
+                           information = "Given profile not in list of profiles.";
+                        }
+                     }
+                     catch (Exception ex)
+                     {
+                        information = "Given profile identifier not valid.";
+                        logger.LogInformation("MapPOST: SetProfile: Invalid profile identifier supplied.");
+                     }
+                  }
+                  if (success)
+                  {
+                     goXlrServer.SetProfile(reqProfile);
+                     information = "New profile set.";
+                     logger.LogInformation("MapPOST: SetProfile: New profile set.");
+                  }
+               }
+               catch (Exception ex)
+               {
+
+                  logger.LogInformation("MapPOST: SetProfile: Invalid JSON data supplied.");
+                  logger.LogInformation(ex.ToString());
+                  information = "JSON data not valid.";
+               }
+            }
+            JsonObject response = new JsonObject
+            {
+               ["status"] = success,
+               ["information"] = information
+            };
+            await context.Response.Body.WriteAsync(Encoding.UTF8.GetBytes(response.ToJsonString()));
+         });
+
          app.Run();
 
       }
