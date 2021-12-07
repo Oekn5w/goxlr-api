@@ -177,9 +177,12 @@ namespace GoXLR.Server
          return tempArr.ToList();
       }
 
-      public List<string> GetProfiles()
+      public List<string> GetProfiles(bool Update = false)
       {
-         _profiles = FetchProfiles();
+         if (Update || _profiles.Count() == 0)
+         {
+            _profiles = FetchProfiles();
+         }
          return _profiles;
       }
 
