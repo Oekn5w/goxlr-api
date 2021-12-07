@@ -11,6 +11,7 @@ using System;
 using System.IO;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -62,17 +63,24 @@ namespace GoXLR.WebAPI
          {
             context.Response.StatusCode = 200;
             context.Response.ContentType = "application/json";
-            await context.Response.Body.WriteAsync(Encoding.UTF8.GetBytes($"{{\"statusAPI\":{JsonSerializer.Serialize("GoXLR API online!")}}}"));
-            //return Task.CompletedTask;
+            JsonObject response = new JsonObject
+            {
+               ["statusAPI"] = "GoXLR API online!"
+            };
+            await context.Response.Body.WriteAsync(Encoding.UTF8.GetBytes(response.ToJsonString()));
          });
 
          app.MapGet("/status", async context =>
          {
             context.Response.StatusCode = 200;
             context.Response.ContentType = "application/json";
-            string response = goXlrServer.GetConnected() ? "connected" : "disconnected";
-            response = $"{{\"status\":{JsonSerializer.Serialize(response)}}}";
-            await context.Response.Body.WriteAsync(Encoding.UTF8.GetBytes(response));
+            bool connected = goXlrServer.GetConnected();
+            JsonObject response = new JsonObject
+            {
+               ["status"] = connected,
+               ["information"] = connected ? "connected" : "disconnected"
+            };
+            await context.Response.Body.WriteAsync(Encoding.UTF8.GetBytes(response.ToJsonString()));
          });
 
          app.MapGet("/profilenames", async context =>
@@ -80,25 +88,33 @@ namespace GoXLR.WebAPI
             context.Response.StatusCode = 200;
             context.Response.ContentType = "application/json";
             bool connected = goXlrServer.GetConnected();
-            string response = "";
+            JsonObject response = new JsonObject
+            {
+               ["status"] = connected
+            };
             if (connected)
             {
-               var profiles = goXlrServer.GetProfiles();
-               response = $"{{\"success\":{connected.ToString()},\"profiles\":{JsonSerializer.Serialize(profiles.ToArray())}}}";
+               var profiles = goXlrServer.GetProfiles(true);
+               var tempjsonarr = new JsonArray();
+               foreach (var profile in profiles)
+               {
+                  tempjsonarr.Add(profile);
+               }
+               response["profiles"] = tempjsonarr;
             }
             else
             {
-               response = $"{{\"success\":{connected.ToString()}}}";
+               response["information"] = "disconnected";
             }
-            await context.Response.Body.WriteAsync(Encoding.UTF8.GetBytes(response));
+            await context.Response.Body.WriteAsync(Encoding.UTF8.GetBytes(response.ToJsonString()));
          });
 
          app.Run();
 
       }
-      private string setRouting(ref GoXLRServer server, string action, string input, string output)
+      private bool setRouting(ref GoXLRServer server, string action, string input, string output)
       {
-         return "";
+         return false;
       }
    }
 
