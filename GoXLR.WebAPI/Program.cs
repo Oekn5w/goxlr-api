@@ -130,33 +130,24 @@ namespace GoXLR.WebAPI
                   int tempIdx;
                   string reqProfile = "";
                   var profiles = goXlrServer.GetProfiles(true);
-                  try
+                  switch (profileEle.ValueKind)
                   {
-                     tempIdx = profileEle.GetInt32();
-                     if (tempIdx >= 0 && tempIdx < profiles.Count())
-                     {
-                        reqProfile = profiles[tempIdx];
-                        success = true;
-                     }
-                  }
-                  catch (Exception ex) { }
-                  if (reqProfile == "")
-                  {
-                     try
-                     {
+                     case JsonValueKind.Number:
+                        tempIdx = profileEle.GetInt32();
+                        if (tempIdx >= 0 && tempIdx < profiles.Count())
+                        {
+                           reqProfile = profiles[tempIdx];
+                           success = true;
+                        }
+                        break;
+                     case JsonValueKind.String:
                         reqProfile = profileEle.GetString();
                         success = profiles.Contains(reqProfile);
-                        if (!success)
-                        {
-                           logger.LogInformation("MapPOST: SetProfile: Given profile identifier not found.");
-                           information = "Given profile not in list of profiles.";
-                        }
-                     }
-                     catch (Exception ex)
-                     {
+                        break;
+                     default:
                         information = "Given profile identifier not valid.";
                         logger.LogInformation("MapPOST: SetProfile: Invalid profile identifier supplied.");
-                     }
+                        break;
                   }
                   if (success)
                   {
@@ -164,10 +155,14 @@ namespace GoXLR.WebAPI
                      information = "New profile set.";
                      logger.LogInformation("MapPOST: SetProfile: New profile set.");
                   }
+                  else
+                  {
+                     logger.LogInformation("MapPOST: SetProfile: Given profile identifier not found.");
+                     information = "Given profile not in list of profiles.";
+                  }
                }
                catch (Exception ex)
                {
-
                   logger.LogInformation("MapPOST: SetProfile: Invalid JSON data supplied.");
                   logger.LogInformation(ex.ToString());
                   information = "JSON data not valid.";
