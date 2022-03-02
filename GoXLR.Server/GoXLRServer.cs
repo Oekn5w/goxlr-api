@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -117,9 +117,9 @@ namespace GoXLR.Server
                var propertyEvent = root.GetProperty("event").GetString();
 
                var changeProfileActions = new[]
-                  {
-                        "com.tchelicon.goxlr.profilechange", //SD plugin v0.17+
-                        "com.tchelicon.goXLR.ChangeProfile" //obsolete pre-0.17
+               {
+                  "com.tchelicon.goxlr.profilechange", //SD plugin v0.17+
+                  "com.tchelicon.goXLR.ChangeProfile" //obsolete pre-0.17
                };
 
                if (changeProfileActions.Contains(propertyAction) &&
@@ -127,12 +127,11 @@ namespace GoXLR.Server
                {
                   //Format:
                   tempArr = root
-                      .GetProperty("payload")
-                      .GetProperty("Profiles")
-                      .EnumerateArray()
-                      .Select(element => element.GetString())
-                      .ToArray();
-
+                     .GetProperty("payload")
+                     .GetProperty("Profiles")
+                     .EnumerateArray()
+                     .Select(element => element.GetString())
+                     .ToArray();
                }
                else
                {
