@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -101,7 +101,7 @@ namespace GoXLR.Server
          socket.OnMessage = (message) =>
          {
             _inProgress = true;
-            _logger.LogDebug("Message: {0}", message);
+            _logger.LogDebug("Message Received: {0}", message);
 
             try
             {
@@ -113,8 +113,19 @@ namespace GoXLR.Server
                }
 
                var root = document.RootElement;
-               var propertyAction = root.GetProperty("action").GetString();
-               var propertyEvent = root.GetProperty("event").GetString();
+               string propertyAction = "";
+               string propertyEvent = "";
+               try
+               {
+                  propertyAction = root.GetProperty("action").GetString();
+                  propertyEvent = root.GetProperty("event").GetString();
+               }
+               catch (KeyNotFoundException e)
+               {
+                  _logger.LogInformation("Message doesn't contain action and event.");
+                  _inProgress = false;
+                  return;
+               }
 
                var changeProfileActions = new[]
                {
@@ -135,7 +146,8 @@ namespace GoXLR.Server
                }
                else
                {
-                  _logger.LogWarning("Unknown contextId from GoXLR.");
+                  _logger.LogInformation("Unknown action - event combo from GoXLR.");
+                  _logger.LogDebug("Element: " + JsonSerializer.Serialize(root));
                }
             }
             catch (Exception e)
@@ -146,6 +158,15 @@ namespace GoXLR.Server
          };
 
          socket.OnError = (exception) => _logger.LogError(exception.ToString());
+      }
+
+      private void Send(string message)
+      {
+         if (_connection != null)
+         {
+            _logger.LogDebug("Message Sent: {0}", message);
+            _ = _connection.Send(message);
+         }
       }
 
       /// <summary>
@@ -169,7 +190,7 @@ namespace GoXLR.Server
          _inProgress = true;
 
          //Send:
-         _ = _connection.Send(json);
+         this.Send(json);
 
          while (_inProgress) { }
 
@@ -210,7 +231,7 @@ namespace GoXLR.Server
          var json = $"{{\"action\":\"com.tchelicon.goxlr.profilechange\",\"event\":\"keyUp\",\"payload\":{{\"settings\":{{\"SelectedProfile\":{profileName}}}}}}}";
 
          //Send:
-         _ = _connection.Send(json);
+         this.Send(json);
       }
 
       /// <summary>
@@ -271,7 +292,7 @@ namespace GoXLR.Server
          var json = $"{{\"action\":\"com.tchelicon.goxlr.routingtable\",\"event\":\"keyUp\",\"payload\":{{\"settings\":{{\"RoutingAction\":{action},\"RoutingInput\":{input},\"RoutingOutput\":{output}}}}}}}";
 
          //Send:
-         _ = _connection.Send(json);
+         this.Send(json);
 
          return true;
       }
